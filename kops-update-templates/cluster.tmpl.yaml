@@ -17,18 +17,10 @@ spec:
   - etcdMembers:
     - instanceGroup: master-us-east-1a
       name: a
-#    - instanceGroup: master-us-east-1b
-#      name: b
-#    - instanceGroup: master-us-east-1c
-#      name: c
     name: main
   - etcdMembers:
     - instanceGroup: master-us-east-1a
       name: a
-#    - instanceGroup: master-us-east-1b
-#      name: b
-#    - instanceGroup: master-us-east-1c
-#      name: c
     name: events
   iam:
     allowContainerRegistry: true
@@ -50,31 +42,11 @@ spec:
     name: us-east-1a
     type: Private
     zone: us-east-1a
-#  - cidr: {{.SUBNET_CIDR2}}
-#    id: {{.SUBNET_ID2}}
-#    name: us-east-1b
-#    type: Private
-#    zone: us-east-1b
-#  - cidr: {{.SUBNET_CIDR3}}
-#    id: {{.SUBNET_ID3}}
-#    name: us-east-1c
-#    type: Private
-#    zone: us-east-1c
   - cidr: {{.SUBNET_CIDR4}}
     id: {{.SUBNET_ID4}}
     name: utility-us-east-1a
     type: Utility
     zone: us-east-1a
-#  - cidr: {{.SUBNET_CIDR5}}
-#    id: {{.SUBNET_ID5}}
-#    name: utility-us-east-1b
-#    type: Utility
-#    zone: us-east-1b
-#  - cidr: {{.SUBNET_CIDR6}}
-#    id: {{.SUBNET_ID6}}
-#    name: utility-us-east-1c
-#    type: Utility
-#    zone: us-east-1c
   topology:
     bastion:
       bastionPublicName: bastion.{{.CLUSTER_NAME}}

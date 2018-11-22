@@ -7,12 +7,12 @@ export CLUSTER_NAME=`grep 'CLUSTER_NAME:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml
 export S3_BUCKET_NAME=`grep 'S3_BUCKET_NAME:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 export KOPS_STATE_STORE=s3://$S3_BUCKET_NAME
 
-export ZONES=`grep 'ZONE1:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`,`grep 'ZONE2:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`,`grep 'ZONE3:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
+export ZONES=`grep 'ZONE1:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 export NETWORK_CIDR=`grep 'NETWORK_CIDR:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 export DNS_ZONE_PUBLIC_ID=`grep 'DNS_ZONE_ID:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 export VPC_ID=`grep 'VPC_ID:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
-export SUBNET_IDS=`grep 'SUBNET_ID1:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`,`grep 'SUBNET_ID2:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`,`grep 'SUBNET_ID3:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
-export UTILITY_SUBNET_IDS=`grep 'SUBNET_ID4:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`,`grep 'SUBNET_ID5:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`,`grep 'SUBNET_ID6:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
+export SUBNET_IDS=`grep 'SUBNET_ID1:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
+export UTILITY_SUBNET_IDS=`grep 'SUBNET_ID4:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 
 export NODES_TYPE=`grep 'NODES_TYPE:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 export MASTER_TYPE=`grep 'MASTER_DEFAULT_TYPE:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
@@ -22,6 +22,7 @@ export MASTER_COUNT=`grep 'MASTER_DEFAULT_SIZE:' $KOPS_UPDATE_TEMPLATE_PATH/valu
 export NODES_MIN_SIZE=`grep 'NODES_MIN_SIZE:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 export NODES_MAX_SIZE=`grep 'NODES_MAX_SIZE:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 
+AWS_DEFAULT_REGION=us-east-1
 
 function help(){
   echo "Usage of kops script:"
@@ -77,6 +78,7 @@ create-cluster)
         elif [[ $AWS_DEFAULT_REGION == "us-east-1" ]]; then
           echo "`date +'%Y-%m-%d %H:%M:%S'` Creating s3 Bucket ${bucket}"
           aws s3api create-bucket --bucket ${bucket} --region ${AWS_DEFAULT_REGION}
+#          aws s3api create-bucket --bucket ${bucket} --region us-east-1
         else
           echo "`date +'%Y-%m-%d %H:%M:%S'` Creating s3 Bucket ${bucket}"
           aws s3api create-bucket --bucket ${bucket} --region ${AWS_DEFAULT_REGION} --create-bucket-configuration LocationConstraint=${AWS_DEFAULT_REGION}
