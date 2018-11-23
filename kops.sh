@@ -22,7 +22,8 @@ export MASTER_COUNT=`grep 'MASTER_DEFAULT_SIZE:' $KOPS_UPDATE_TEMPLATE_PATH/valu
 export NODES_MIN_SIZE=`grep 'NODES_MIN_SIZE:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 export NODES_MAX_SIZE=`grep 'NODES_MAX_SIZE:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 
-export GIT_USER=`grep 'GIT_USER:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
+export GIT_USER_NAME=`grep 'GIT_USER_NAME:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
+export GIT_REPO_NAME=`grep 'GIT_REPO_NAME:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 
 AWS_DEFAULT_REGION=us-east-1
 
@@ -37,6 +38,7 @@ function help(){
   echo $'\t'"./kops.sh delete-cluster    : delete cluster"
   echo $'\t'"./kops.sh inst-tiller       : install tiller"
   echo $'\t'"./kops.sh inst-flux         : install flux"
+  echo $'\t'"./kops.sh upgrade-flux      : upgrade flux configuration"
   echo $'\t'"./kops.sh logs-flux         : show flux logs"
   exit;
 }
@@ -186,13 +188,24 @@ exec-ansible)
     ansible-playbook playbook.yaml
     ;;
 inst-tiller)
+    echo "`date +'%Y-%m-%d %H:%M:%S'` Installing tiller"
     kubectl -n kube-system create sa tiller
     kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
     helm init --skip-refresh --upgrade --service-account tiller
     ;;
 inst-flux)
+    echo "`date +'%Y-%m-%d %H:%M:%S'` Add repository https://weaveworks.github.io/flux"
     helm repo add weaveworks https://weaveworks.github.io/flux
-    helm upgrade -i flux --set helmOperator.create=true --set git.url=git@github.com:YOURUSER/flux-get-started --namespace flux weaveworks/flux
+    echo "`date +'%Y-%m-%d %H:%M:%S'` Installing flux"
+    helm upgrade -i flux --set helmOperator.create=true --set git.url=git@github.com:$GIT_USER_NAME/$GIT_REPO_NAME --namespace flux weaveworks/flux
+    echo -e "\e[31m `date +'%Y-%m-%d %H:%M:%S'` Flux will start in a 30 seconds..."
+    sleep 30
+    echo -e "\e[31m `date +'%Y-%m-%d %H:%M:%S'` Add this ssh key to your git\e[0m"
+    kubectl -n flux logs deployment/flux | grep identity.pub | cut -d '"' -f2
+    ;;
+upgrade-flux)
+    echo "`date +'%Y-%m-%d %H:%M:%S'` Updating flux configuration"
+    helm upgrade -i flux --set helmOperator.create=true --set git.url=git@github.com:$GIT_USER_NAME/$GIT_REPO_NAME --namespace flux weaveworks/flux
     ;;
 logs-flux)
    kubectl -n flux logs deployment/flux -f
