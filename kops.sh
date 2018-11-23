@@ -22,6 +22,8 @@ export MASTER_COUNT=`grep 'MASTER_DEFAULT_SIZE:' $KOPS_UPDATE_TEMPLATE_PATH/valu
 export NODES_MIN_SIZE=`grep 'NODES_MIN_SIZE:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 export NODES_MAX_SIZE=`grep 'NODES_MAX_SIZE:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
 
+export GIT_USER=`grep 'GIT_USER:' $KOPS_UPDATE_TEMPLATE_PATH/values.yaml | awk '{ print $2}'`
+
 AWS_DEFAULT_REGION=us-east-1
 
 function help(){
@@ -33,6 +35,9 @@ function help(){
   echo $'\t'"./kops.sh rolling-update    : rolling update of current cluster/nodes (It takes a great amount of time)"
   echo $'\t'"./kops.sh exec-ansible      : execute ansible to insall/update addons in kubernetes cluster"
   echo $'\t'"./kops.sh delete-cluster    : delete cluster"
+  echo $'\t'"./kops.sh inst-tiller       : install tiller"
+  echo $'\t'"./kops.sh inst-flux         : install flux"
+  echo $'\t'"./kops.sh logs-flux         : show flux logs"
   exit;
 }
 
@@ -78,7 +83,6 @@ create-cluster)
         elif [[ $AWS_DEFAULT_REGION == "us-east-1" ]]; then
           echo "`date +'%Y-%m-%d %H:%M:%S'` Creating s3 Bucket ${bucket}"
           aws s3api create-bucket --bucket ${bucket} --region ${AWS_DEFAULT_REGION}
-#          aws s3api create-bucket --bucket ${bucket} --region us-east-1
         else
           echo "`date +'%Y-%m-%d %H:%M:%S'` Creating s3 Bucket ${bucket}"
           aws s3api create-bucket --bucket ${bucket} --region ${AWS_DEFAULT_REGION} --create-bucket-configuration LocationConstraint=${AWS_DEFAULT_REGION}
@@ -86,25 +90,14 @@ create-cluster)
 
         kops create cluster \
             --name=${CLUSTER_NAME} \
+            --node-count=${NODE_COUNT} \
             --zones="${ZONES}" \
-            --state=s3://${S3_BUCKET_NAME} \
-            --networking="calico" \
-            --network-cidr="${NETWORK_CIDR}" \
-            --dns-zone "${DNS_ZONE_PUBLIC_ID}" \
-            --dns="public" \
-            --vpc=${VPC_ID} \
             --node-size="${NODES_TYPE}" \
             --master-size="${MASTER_TYPE}" \
-            --master-count=${MASTER_COUNT} \
-            --node-count=${NODE_COUNT} \
-            --associate-public-ip=false \
-            --subnets=${SUBNET_IDS} \
-            --utility-subnets=${UTILITY_SUBNET_IDS} \
+            --master-zones=$ZONES \
+            --networking="calico" \
             --ssh-public-key=~/.ssh/${KUBE_PEM}.pub \
             --topology=private \
-            --bastion \
-            --api-loadbalancer-type=public \
-            --output=yaml \
             --yes
         isMasterInstanceReady
     else
@@ -159,24 +152,6 @@ update-master)
         echo "`date +'%Y-%m-%d %H:%M:%S'` Updating master-us-east-1a asg ${CLUSTER_NAME}..."
         kops update cluster ${CLUSTER_NAME} --yes --state=s3://${S3_BUCKET_NAME}
 
-#        echo "`date +'%Y-%m-%d %H:%M:%S'` Generating master-us-ast-1b yaml from template file"
-#        kops toolbox template --template $KOPS_UPDATE_TEMPLATE_PATH/master-us-east-1b.tmpl.yaml --values $KOPS_UPDATE_TEMPLATE_PATH/values.yaml --output $KOPS_UPDATE_TEMPLATE_PATH/master-us-east-1b.yaml
-
-#        echo "`date +'%Y-%m-%d %H:%M:%S'` Replacing master-us-east-1b.yaml with state file in s3: ${S3_BUCKET_NAME}"
-#        kops replace -f $KOPS_UPDATE_TEMPLATE_PATH/master-us-east-1b.yaml --name "$CLUSTER_NAME" -v 10
-
-#        echo "`date +'%Y-%m-%d %H:%M:%S'` Updating master-us-east-1b asg ${CLUSTER_NAME}..."
-#        kops update cluster ${CLUSTER_NAME} --yes --state=s3://${S3_BUCKET_NAME}
-
-#        echo "`date +'%Y-%m-%d %H:%M:%S'` Generating master-us-ast-1c yaml from template file"
-#        kops toolbox template --template $KOPS_UPDATE_TEMPLATE_PATH/master-us-east-1c.tmpl.yaml --values $KOPS_UPDATE_TEMPLATE_PATH/values.yaml --output $KOPS_UPDATE_TEMPLATE_PATH/master-us-east-1c.yaml
-
-#        echo "`date +'%Y-%m-%d %H:%M:%S'` Replacing master-us-east-1c.yaml with state file in s3: ${S3_BUCKET_NAME}"
-#        kops replace -f $KOPS_UPDATE_TEMPLATE_PATH/master-us-east-1c.yaml --name "$CLUSTER_NAME" -v 10
-
-#        echo "`date +'%Y-%m-%d %H:%M:%S'` Updating master-us-east-1c asg ${CLUSTER_NAME}..."
-#        kops update cluster ${CLUSTER_NAME} --yes --state=s3://${S3_BUCKET_NAME}
-
     else
         echo "`date +'%Y-%m-%d %H:%M:%S'` Cluster ${CLUSTER_NAME} doesn't exists. No need to update"
     fi
@@ -210,6 +185,18 @@ exec-ansible)
     echo "`date +'%Y-%m-%d %H:%M:%S'` Executing ansible playbook to install/update addons"
     ansible-playbook playbook.yaml
     ;;
+inst-tiller)
+    kubectl -n kube-system create sa tiller
+    kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+    helm init --skip-refresh --upgrade --service-account tiller
+    ;;
+inst-flux)
+    helm repo add weaveworks https://weaveworks.github.io/flux
+    helm upgrade -i flux --set helmOperator.create=true --set git.url=git@github.com:YOURUSER/flux-get-started --namespace flux weaveworks/flux
+    ;;
+logs-flux)
+   kubectl -n flux logs deployment/flux -f
+   ;;
 *)
     help
     ;;
