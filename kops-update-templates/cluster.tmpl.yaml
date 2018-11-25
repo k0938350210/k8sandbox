@@ -29,27 +29,27 @@ spec:
   - 0.0.0.0/0
   kubernetesVersion: {{.KUBERNETES_VERSION}}
   masterPublicName: api.internal.{{.CLUSTER_NAME}}
-  networkCIDR: {{.NETWORK_CIDR}}
-  networkID: {{.VPC_ID}}
+#  networkCIDR: {{.NETWORK_CIDR}}
+#  networkID: {{.VPC_ID}}
   networking:
     calico: {}
   nonMasqueradeCIDR: 100.64.0.0/10
   sshAccess:
   - 0.0.0.0/0
-  subnets:
-  - cidr: {{.SUBNET_CIDR1}}
-    id: {{.SUBNET_ID1}}
-    name: us-east-1a
-    type: Private
-    zone: us-east-1a
-  - cidr: {{.SUBNET_CIDR4}}
-    id: {{.SUBNET_ID4}}
-    name: utility-us-east-1a
-    type: Utility
-    zone: us-east-1a
-  topology:
-    bastion:
-      bastionPublicName: bastion.{{.CLUSTER_NAME}}
+ # subnets:
+ # - cidr: {{.SUBNET_CIDR1}}
+ #   id: {{.SUBNET_ID1}}
+ #   name: us-east-1a
+ #   type: Private
+ #   zone: us-east-1a
+ # - cidr: {{.SUBNET_CIDR4}}
+ #   id: {{.SUBNET_ID4}}
+ #   name: utility-us-east-1a
+ #   type: Utility
+ #   zone: us-east-1a
+ # topology:
+ #   bastion:
+ #     bastionPublicName: bastion.{{.CLUSTER_NAME}}
     dns:
       type: Public
     masters: private

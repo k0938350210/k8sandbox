@@ -40,6 +40,7 @@ function help(){
   echo $'\t'"./kops.sh inst-flux         : install flux"
   echo $'\t'"./kops.sh upgrade-flux      : upgrade flux configuration"
   echo $'\t'"./kops.sh logs-flux         : show flux logs"
+  echo $'\t'"./kops.sh delete-flux       : delete flux"
   exit;
 }
 
@@ -177,6 +178,8 @@ delete-cluster)
 
         echo "`date +'%Y-%m-%d %H:%M:%S'` Deleting cluster ${CLUSTER_NAME}..."
         kops delete cluster ${CLUSTER_NAME} --state=s3://${S3_BUCKET_NAME} --yes
+        echo "`date +'%Y-%m-%d %H:%M:%S'` Deleting s3 bucket ${S3_BUCKET_NAME}..."
+        aws s3 rb s3://${S3_BUCKET_NAME} --force
     else
         echo "`date +'%Y-%m-%d %H:%M:%S'` Cluster ${CLUSTER_NAME} doesn't exists. It is already deleted."
     fi
@@ -197,7 +200,7 @@ inst-flux)
     echo "`date +'%Y-%m-%d %H:%M:%S'` Add repository https://weaveworks.github.io/flux"
     helm repo add weaveworks https://weaveworks.github.io/flux
     echo "`date +'%Y-%m-%d %H:%M:%S'` Installing flux"
-    helm upgrade -i flux --set helmOperator.create=true --set git.url=git@github.com:$GIT_USER_NAME/$GIT_REPO_NAME --namespace flux weaveworks/flux
+    helm install --name flux --set helmOperator.create=true --set git.url=git@github.com:$GIT_USER_NAME/$GIT_REPO_NAME --namespace flux weaveworks/flux
     echo -e "\e[31m `date +'%Y-%m-%d %H:%M:%S'` Flux will start in a 30 seconds..."
     sleep 30
     echo -e "\e[31m `date +'%Y-%m-%d %H:%M:%S'` Add this ssh key to your git\e[0m"
@@ -209,6 +212,9 @@ upgrade-flux)
     ;;
 logs-flux)
    kubectl -n flux logs deployment/flux -f
+   ;;
+delete-flux)
+   helm delete --purge flux
    ;;
 *)
     help
